@@ -45,11 +45,14 @@ static int usage(int rc)
 {
 	fprintf(stderr,
 		"Usage: %s [-D] [-a ADDR] [-d DEVICE] [-f FILE]\n"
+		"\n"
 		"Options:\n"
 		" -a ADDR    Set primary address, default: 0\n"
 		" -D         Enable debug messages\n"
 		" -d device  Serial port/pty to use\n"
-		" -f file    Test data to reuse, simulate other device\n", arg0);
+		" -f file    Test data to reuse, simulate other device\n"
+		"\n"
+		"Copyright (c) 2022  Addiva Elektronik AB\n", arg0);
 	return rc;
 }
 
