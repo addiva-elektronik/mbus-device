@@ -18,17 +18,17 @@ static int   address;
 static int   debug;
 static char *arg0;
 
-/* Our fake identity, from std. pp 35 */
+/* Our fake identity, from std. pp 43, variable data structure (mode 1) */
 unsigned char raw_response[] = {
-	0x68, 0x13, 0x13, 0x68, /* header of RSP_UD telegram (L-Field = 13h = 19d) */
-	0x08, 0x05, 0x73,	/* C field = 08h (RSP_UD), address 5, CI field = 73h (fixed, LSByte first) */
+	0x68, 0x1f, 0x1f, 0x68, /* header of RSP_UD telegram (length 1fh) */
+	0x08, 0x02, 0x72,       /* C field = 08h (RSP_UD), address 2, CI field = 72h */
 	0x78, 0x56, 0x34, 0x12, /* identification number = 12345678 */
-	0x0a,			/* transmission counter = 0Ah = 10d */
-	0x00,			/* status 00h: counters coded BCD, actual values, no errors */
-	0xe9, 0x7e,		/* Type&Unit: medium water, unit1 = 1l, unit2 = 1l (same, but historic) */
-	0x01, 0x00, 0x00, 0x00, /* counter 1 = 1l (actual value) */
-	0x35, 0x01, 0x00, 0x00, /* counter 2 = 135 l (historic value) */
-	0x3c, 0x16		/* checksum and stop sign */
+	0x24, 0x40, 0x01, 0x07,	/* manuf. ID 4024h (PAD in EN 61107), generation 1, water */
+	0x55, 0x00, 0x00, 0x00,	/* TC 55h, Status 00h, Signature 0000h */
+	0x03, 0x13, 0x15, 0x31, 0x00,       /* Data block 1: unit 0, storage No 0, no tariff, instantaneous volume, 12565 l (24 bit integer */
+	0xda, 0x02, 0x3b, 0x13, 0x01,       /* Data block 2: unit 0, storage No 5, no tariff, maximum volume flow, 113 l/h (4 digit BCD) */
+	0x8b, 0x60, 0x04, 0x37, 0x18, 0x02, /* Data block 3: unit 1, storage No 0, tariff 2, instantaneous energy, 218,37 kWh (6 digit BCD) */
+	0x18, 0x16		/* checksum and stop sign */
 };
 
 static void mbus_send_ack(mbus_handle *h)
