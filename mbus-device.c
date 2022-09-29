@@ -41,6 +41,35 @@ static void mbus_send_ack(mbus_handle *h)
 	free(f);
 }
 
+static int match_secondary(mbus_frame *f, mbus_frame_data *me)
+{
+	long long fid, oid;
+	int match = 0;
+	int i;
+
+	if (f->data_size < 8 || f->data_size > 8) {
+		warnx("Invalid scan frame: %s", mbus_error_str());
+		return 0;
+	}
+
+	fid = mbus_data_bcd_decode_hex(f->data, 4);
+	oid = mbus_data_bcd_decode_hex(me->data_var.header.id_bcd, 4);
+
+	for (i = 0; i < 8; i++) {
+		int shift = 28 - i * 4;
+		char f, o;
+
+		f = (fid >> shift) & 0x0f;
+		o = (oid >> shift) & 0x0f;
+		if (f == 0xf)
+			continue;
+		if (f == o)
+			match = 1;
+	}
+
+	return match;
+}
+
 static int usage(int rc)
 {
 	fprintf(stderr,
@@ -128,13 +157,30 @@ int main(int argc, char **argv)
 	if (result != 0)
 		errx(1, "Invalid M-Bus response frame, rc %d: %s", result, mbus_error_str());
 
-	response.address = address;
+	mbus_frame_data *me = mbus_frame_data_new();
+	if (!me)
+		errx(1, "Failed allocating device data");
+	if (mbus_frame_data_parse(&response, me) == -1)
+		errx(1, "Failed parsing my identity");
 
+	response.address = address;
+	char *secondary = mbus_frame_get_secondary_address(&response);
+	if (!secondary)
+		warnx("Starting up, primary addr %d, no secondary: %s", address, mbus_error_str());
+	else
+		warnx("Starting up, primary addr %d, secondary addr %s", address, secondary);
+
+	int selected = 0;
 	while (1) {
+		int fcb = 0, forus = 0;
+
 		if (mbus_recv_frame(handle, &request) != MBUS_RECV_RESULT_OK)
 			continue;
 
 		switch (request.address) {
+		case MBUS_ADDRESS_BROADCAST_NOREPLY:
+			continue; /* nop */
+
 		case MBUS_ADDRESS_BROADCAST_REPLY:
 			break;	/* all should respond */
 
@@ -142,21 +188,59 @@ int main(int argc, char **argv)
 			break;	/* XXX */
 
 		default:
-			if (request.address == address)
+			if (request.address == address) {
+				forus = 1;
 				break;
+			}
 
-			warnx("Not for us, got addr %d control %d", request.address, request.control);
+			warnx("Not for us (%d), got addr %d control %d", address, request.address, request.control);
 			continue;
 		}
 
+		if (request.control & MBUS_CONTROL_MASK_FCB) {
+			request.control &= ~MBUS_CONTROL_MASK_FCB;
+			fcb = 1;
+		}
+
 		switch (request.control) {
-		case MBUS_CONTROL_MASK_REQ_UD2:
+		case MBUS_CONTROL_MASK_SND_NKE: /* wakeup */
+			if (request.address == MBUS_ADDRESS_NETWORK_LAYER)
+				selected = 0; /* std. v4.8 ch 7.1 pp 64 */
+			mbus_send_ack(handle);
+			break;
+
+		case MBUS_CONTROL_MASK_REQ_UD2: /* req data */
+			if (!selected && !forus)
+				break;
+
 			if (mbus_send_frame(handle, &response))
 				warnx("Failed sending response: %s", mbus_error_str());
 			break;
 
-		case MBUS_CONTROL_MASK_SND_NKE:
-			mbus_send_ack(handle);
+		case MBUS_CONTROL_MASK_SND_UD: /* select secondary? */
+			switch (request.control_information) {
+			case MBUS_CONTROL_INFO_DATA_SEND:
+				if (request.data[0] == 0x01 && request.data[1] == 0x7a) {
+					warnx("Set new primary address %d", request.data[2]);
+					address = request.data[2];
+					response.address = address;
+					mbus_send_ack(handle);
+				}
+				break;
+
+			case MBUS_CONTROL_INFO_SELECT_SLAVE:
+				if (match_secondary(&request, me)) {
+					mbus_send_ack(handle);
+					selected = 1;
+				} else {
+					selected = 0; /* std. v4.8 ch 7.1 pp 64 */
+				}
+				break;
+
+			default:
+				/* unsupported atm */
+				break;
+			}
 			break;
 
 		default:
