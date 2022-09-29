@@ -7,8 +7,10 @@ enough functionality to:
 
  - Respond to requests
  - Respond to primary address scanning
+ - Respond to secondary address scanning
+ - Set primary address from secondary address
 
-Note, secondary address not (yet) supported.
+> **Note:** this slave role device is only used for testing a master.
 
 
 Example
