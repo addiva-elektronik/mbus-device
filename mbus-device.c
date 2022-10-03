@@ -194,10 +194,12 @@ int main(int argc, char **argv)
 			continue; /* nop */
 
 		case MBUS_ADDRESS_BROADCAST_REPLY:
+			forus = 1;
 			break;	/* all should respond */
 
 		case MBUS_ADDRESS_NETWORK_LAYER:
-			break;	/* XXX */
+			forus = 1;
+			break;
 
 		default:
 			if (request.address == address) {
@@ -218,8 +220,9 @@ int main(int argc, char **argv)
 		switch (request.control) {
 		case MBUS_CONTROL_MASK_SND_NKE: /* wakeup */
 			if (request.address == MBUS_ADDRESS_NETWORK_LAYER)
-				selected = 0; /* std. v4.8 ch 7.1 pp 64 */
-			mbus_send_ack(handle);
+				selected = 0;   /* std. v4.8 ch 7.1 pp 64 */
+			if (forus)              /* std. v4.8 ch 5.4 pp 25 */
+				mbus_send_ack(handle);
 			break;
 
 		case MBUS_CONTROL_MASK_REQ_UD2: /* req data */
