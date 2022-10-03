@@ -32,9 +32,7 @@
 #define dbg(...) if (debug) warnx(__VA_ARGS__)
 #define log(...)            warnx(__VA_ARGS__)
 
-#define MBUS_DEFAULT_SERIAL_DEVICE "/dev/ttyS0"
-
-static char *device = MBUS_DEFAULT_SERIAL_DEVICE;
+static char *device;
 static int   address;
 static int   debug;
 static char *arg0;
@@ -137,7 +135,6 @@ int main(int argc, char **argv)
 
 
 	arg0 = argv[0];
-	memset(&request, 0, sizeof(mbus_frame));
 
 	while ((c = getopt(argc, argv, "a:b:df:")) != EOF) {
 		switch (c) {
@@ -161,7 +158,9 @@ int main(int argc, char **argv)
 	if (optind >= argc)
 		return usage(1);
 	device = argv[optind++];
+
 	srand(time(NULL));
+	memset(&request, 0, sizeof(mbus_frame));
 
 	handle = mbus_context_serial(device);
 	if (!handle) {
