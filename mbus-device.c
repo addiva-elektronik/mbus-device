@@ -219,6 +219,7 @@ int main(int argc, char **argv)
 
 		switch (request.control) {
 		case MBUS_CONTROL_MASK_SND_NKE: /* wakeup */
+			dbg("SND_NKE (0x%X)", MBUS_CONTROL_MASK_SND_NKE);
 			if (request.address == MBUS_ADDRESS_NETWORK_LAYER)
 				selected = 0;   /* std. v4.8 ch 7.1 pp 64 */
 			if (forus)              /* std. v4.8 ch 5.4 pp 25 */
@@ -226,6 +227,7 @@ int main(int argc, char **argv)
 			break;
 
 		case MBUS_CONTROL_MASK_REQ_UD2: /* req data */
+			dbg("REQ_UD2 (0x%X)", MBUS_CONTROL_MASK_REQ_UD2);
 			if (!selected && !forus)
 				break;
 
@@ -236,6 +238,7 @@ int main(int argc, char **argv)
 		case MBUS_CONTROL_MASK_SND_UD: /* select secondary? */
 			switch (request.control_information) {
 			case MBUS_CONTROL_INFO_DATA_SEND:
+				dbg("SND_UD (0x%X) INFO DATA (0x%X)", MBUS_CONTROL_MASK_SND_UD, MBUS_CONTROL_INFO_DATA_SEND);
 				if (request.data[0] == 0x01 && request.data[1] == 0x7a) {
 					if (!selected)
 						break;
@@ -248,6 +251,7 @@ int main(int argc, char **argv)
 				break;
 
 			case MBUS_CONTROL_INFO_SELECT_SLAVE:
+				dbg("SND_UD (0x%X) SELECT SLAVE (0x%X)", MBUS_CONTROL_MASK_SND_UD, MBUS_CONTROL_INFO_SELECT_SLAVE);
 				if (match_secondary(&request, me)) {
 					dbg("Select slave by secondary matches me.");
 					mbus_send_ack(handle);
