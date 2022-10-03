@@ -30,7 +30,7 @@ created, `/dev/pts/NUM`, here we have 12 + 13:
 
 In terminal B, start the `mbus-device`, here we use primary address 5:
 
-    $ mbus-device -d /dev/pts/12 -a 5
+    $ mbus-device -a 5 /dev/pts/12
 
 In terminal C, start a libmbus tool, here we request data:
 
