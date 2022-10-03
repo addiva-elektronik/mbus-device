@@ -73,13 +73,14 @@ static int match_secondary(mbus_frame *f, mbus_frame_data *me)
 static int usage(int rc)
 {
 	fprintf(stderr,
-		"Usage: %s [-D] [-a ADDR] [-d DEVICE] [-f FILE]\n"
+		"Usage: %s [-D] [-a ADDR] [-f FILE] DEVICE\n"
 		"\n"
 		"Options:\n"
 		" -a ADDR    Set primary address, default: 0\n"
-		" -D         Enable debug messages\n"
-		" -d device  Serial port/pty to use\n"
+		" -d         Enable debug messages\n"
 		" -f file    Test data to reuse, simulate other device\n"
+		"Arguments:\n"
+		" DEVICE     Serial port/pty to use\n"
 		"\n"
 		"Copyright (c) 2022  Addiva Elektronik AB\n", arg0);
 	return rc;
@@ -99,16 +100,13 @@ int main(int argc, char **argv)
 	arg0 = argv[0];
 	memset(&request, 0, sizeof(mbus_frame));
 
-	while ((c = getopt(argc, argv, "a:Dd:f:")) != EOF) {
+	while ((c = getopt(argc, argv, "a:df:")) != EOF) {
 		switch (c) {
 		case 'a':
 			address = atoi(optarg);
 			break;
-		case 'D':
-			debug = 1;
-			break;
 		case 'd':
-			device = optarg;
+			debug = 1;
 			break;
 		case 'f':
 			file = optarg;
@@ -117,6 +115,10 @@ int main(int argc, char **argv)
 			return usage(0);
 		}
 	}
+
+	if (optind >= argc)
+		return usage(1);
+	device = argv[optind++];
 
 	handle = mbus_context_serial(device);
 	if (!handle) {
