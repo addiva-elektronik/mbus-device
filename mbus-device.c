@@ -189,6 +189,9 @@ int main(int argc, char **argv)
 		if (mbus_recv_frame(handle, &request) != MBUS_RECV_RESULT_OK)
 			continue;
 
+		if (request.start1 == MBUS_FRAME_ACK_START)
+			continue;
+
 		switch (request.address) {
 		case MBUS_ADDRESS_BROADCAST_NOREPLY:
 			continue; /* nop */
