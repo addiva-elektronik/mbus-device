@@ -92,10 +92,11 @@ static int match_secondary(mbus_frame *f, mbus_frame_data *me)
 static int usage(int rc)
 {
 	fprintf(stderr,
-		"Usage: %s [-D] [-a ADDR] [-f FILE] DEVICE\n"
+		"Usage: %s [-d] [-a ADDR] [-b RATE] [-f FILE] DEVICE\n"
 		"\n"
 		"Options:\n"
 		" -a ADDR    Set primary address, default: 0\n"
+		" -b RATE    Set baudrate: 300, 2400, 9600, default: 2400\n"
 		" -d         Enable debug messages\n"
 		" -f file    Test data to reuse, simulate other device\n"
 		"Arguments:\n"
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
 	mbus_handle *handle;
 	unsigned char *buf;
 	char *file = NULL;
+	long rate = 0;
 	size_t len;
 	int result;
 	int c;
@@ -119,10 +121,13 @@ int main(int argc, char **argv)
 	arg0 = argv[0];
 	memset(&request, 0, sizeof(mbus_frame));
 
-	while ((c = getopt(argc, argv, "a:df:")) != EOF) {
+	while ((c = getopt(argc, argv, "a:b:df:")) != EOF) {
 		switch (c) {
 		case 'a':
 			address = atoi(optarg);
+			break;
+		case 'b':
+			rate = atol(optarg);
 			break;
 		case 'd':
 			debug = 1;
@@ -151,10 +156,12 @@ int main(int argc, char **argv)
 		mbus_register_recv_event(handle, &mbus_dump_recv_event);
 	}
 
-	if (mbus_connect(handle) == -1) {
+	if (mbus_connect(handle) == -1)
 		errx(1, "Failed opening serial port: %s", mbus_error_str());
-		return 1;
-	}
+
+	if (rate && mbus_serial_set_baudrate(handle, rate) == -1)
+		errx(1, "Failed setting baud rate %ld on serial port %s: %s",
+		     rate, device, mbus_error_str());
 
 	if (file) {
 		unsigned char filebuf[1024], binbuf[1024];
