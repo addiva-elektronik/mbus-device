@@ -114,7 +114,7 @@ static int usage(int rc)
 		" -a ADDR    Set primary address, default: 0\n"
 		" -b RATE    Set baudrate: 300, 2400, 9600, default: 2400\n"
 		" -d         Enable debug messages\n"
-		" -f file    Test data to reuse, simulate other device\n"
+		" -f file    Test data to reuse, simulate another product\n"
 		"Arguments:\n"
 		" DEVICE     Serial port/pty to use\n"
 		"\n"
