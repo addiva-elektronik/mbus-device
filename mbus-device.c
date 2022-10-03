@@ -34,9 +34,14 @@ unsigned char raw_response[] = {
 	0x18, 0x16		/* checksum and stop sign */
 };
 
+/*
+ * random delay of ACK so multiple devices don't collide on the bus.
+ */
 static void mbus_send_ack(mbus_handle *h)
 {
 	mbus_frame *f;
+
+	usleep((rand() % 1000) + 1);
 
 	f = mbus_frame_new(MBUS_FRAME_TYPE_ACK);
 	if (mbus_send_frame(h, f))
@@ -122,6 +127,7 @@ int main(int argc, char **argv)
 	if (optind >= argc)
 		return usage(1);
 	device = argv[optind++];
+	srand(time(NULL));
 
 	handle = mbus_context_serial(device);
 	if (!handle) {
