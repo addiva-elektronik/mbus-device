@@ -234,6 +234,9 @@ int main(int argc, char **argv)
 			switch (request.control_information) {
 			case MBUS_CONTROL_INFO_DATA_SEND:
 				if (request.data[0] == 0x01 && request.data[1] == 0x7a) {
+					if (!selected)
+						break;
+
 					log("Setting new primary address %d", request.data[2]);
 					address = request.data[2];
 					response.address = address;
@@ -247,6 +250,7 @@ int main(int argc, char **argv)
 					mbus_send_ack(handle);
 					selected = 1;
 				} else {
+					dbg("Select slave by secondary DOES NOT match me.");
 					selected = 0; /* std. v4.8 ch 7.1 pp 64 */
 				}
 				break;
