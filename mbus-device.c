@@ -51,6 +51,8 @@ static void mbus_send_ack(mbus_handle *h)
 
 static int match_secondary(mbus_frame *f, mbus_frame_data *me)
 {
+	unsigned char mask[4];
+	unsigned char addr[4];
 	long long fid, oid;
 	int match = 0;
 	int i;
@@ -60,8 +62,11 @@ static int match_secondary(mbus_frame *f, mbus_frame_data *me)
 		return 0;
 	}
 
-	fid = mbus_data_bcd_decode_hex(f->data, 4);
-	oid = mbus_data_bcd_decode_hex(me->data_var.header.id_bcd, 4);
+	memcpy(mask, f->data, 4);
+	memcpy(addr, me->data_var.header.id_bcd, 4);
+
+	fid = mbus_data_bcd_decode_hex(mask, 4);
+	oid = mbus_data_bcd_decode_hex(addr, 4);
 
 	for (i = 0; i < 8; i++) {
 		int shift = 28 - i * 4;
@@ -73,6 +78,12 @@ static int match_secondary(mbus_frame *f, mbus_frame_data *me)
 			continue;
 		if (f == o)
 			match = 1;
+	}
+
+	if (match) {
+		dbg("Select by secondary %lld [%02X %02X %02X %02X], me %lld [%02X %02X %02X %02X]",
+		    fid, mask[0], mask[1], mask[2], mask[3],
+		    oid, addr[0], addr[1], addr[2], addr[3]);
 	}
 
 	return match;
@@ -256,11 +267,9 @@ int main(int argc, char **argv)
 			case MBUS_CONTROL_INFO_SELECT_SLAVE:
 				dbg("SND_UD (0x%X) SELECT SLAVE (0x%X)", MBUS_CONTROL_MASK_SND_UD, MBUS_CONTROL_INFO_SELECT_SLAVE);
 				if (match_secondary(&request, me)) {
-					dbg("Select slave by secondary matches me.");
 					mbus_send_ack(handle);
 					selected = 1;
 				} else {
-					dbg("Select slave by secondary DOES NOT match me.");
 					selected = 0; /* std. v4.8 ch 7.1 pp 64 */
 				}
 				break;
