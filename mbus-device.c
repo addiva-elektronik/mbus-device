@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <mbus/mbus.h>
 
+#define dbg(...) if (debug) warnx(__VA_ARGS__)
+#define log(...)            warnx(__VA_ARGS__)
+
 #define MBUS_DEFAULT_SERIAL_DEVICE "/dev/ttyS0"
 
 static char *device = MBUS_DEFAULT_SERIAL_DEVICE;
@@ -37,7 +40,7 @@ static void mbus_send_ack(mbus_handle *h)
 
 	f = mbus_frame_new(MBUS_FRAME_TYPE_ACK);
 	if (mbus_send_frame(h, f))
-		warnx("Failed packing ACK");
+		warnx("Failed sending ACK");
 	free(f);
 }
 
@@ -167,10 +170,11 @@ int main(int argc, char **argv)
 
 	response.address = address;
 	char *secondary = mbus_frame_get_secondary_address(&response);
-	if (!secondary)
-		warnx("Starting up, primary addr %d, no secondary: %s", address, mbus_error_str());
-	else
-		warnx("Starting up, primary addr %d, secondary addr %s", address, secondary);
+	if (!secondary) {
+		dbg("Starting up, primary addr %d, no secondary: %s", address, mbus_error_str());
+	} else {
+		dbg("Starting up, primary addr %d, secondary addr %s", address, secondary);
+	}
 
 	int selected = 0;
 	while (1) {
@@ -195,7 +199,8 @@ int main(int argc, char **argv)
 				break;
 			}
 
-			warnx("Not for us (%d), got addr %d control %d", address, request.address, request.control);
+			dbg("Not for us (%d), got addr %d control %d",
+			    address, request.address, request.control);
 			continue;
 		}
 
@@ -223,7 +228,7 @@ int main(int argc, char **argv)
 			switch (request.control_information) {
 			case MBUS_CONTROL_INFO_DATA_SEND:
 				if (request.data[0] == 0x01 && request.data[1] == 0x7a) {
-					warnx("Set new primary address %d", request.data[2]);
+					log("Setting new primary address %d", request.data[2]);
 					address = request.data[2];
 					response.address = address;
 					mbus_send_ack(handle);
@@ -232,6 +237,7 @@ int main(int argc, char **argv)
 
 			case MBUS_CONTROL_INFO_SELECT_SLAVE:
 				if (match_secondary(&request, me)) {
+					dbg("Select slave by secondary matches me.");
 					mbus_send_ack(handle);
 					selected = 1;
 				} else {
