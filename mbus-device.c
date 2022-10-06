@@ -221,8 +221,16 @@ int main(int argc, char **argv)
 	while (1) {
 		int fcb = 0, forus = 0;
 
-		if (mbus_recv_frame(handle, &request) != MBUS_RECV_RESULT_OK)
+		/*
+		 * Workaround.  Currently libmbus is solely focused on
+		 * the master role.  As such the mbus_recv_frame() has
+		 * safeguards that don't apply to a slave device, which
+		 * means we cannot use that function or we lose every
+		 * other frame.
+		 */
+		if (handle->recv(handle, &request) != MBUS_RECV_RESULT_OK)
 			continue;
+		time(&request.timestamp);
 
 		if (request.start1 == MBUS_FRAME_ACK_START)
 			continue;
