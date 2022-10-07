@@ -244,7 +244,11 @@ int main(int argc, char **argv)
 			break;	/* all should respond */
 
 		case MBUS_ADDRESS_NETWORK_LAYER:
-			forus = 1;
+			/* secondary address selection in progress? */
+			if (selected) {
+				/* Respond to REQ_UD2 */
+				forus = 1;
+			}
 			break;
 
 		default:
@@ -266,15 +270,17 @@ int main(int argc, char **argv)
 		switch (request.control) {
 		case MBUS_CONTROL_MASK_SND_NKE: /* wakeup */
 			dbg("SND_NKE (0x%X)", MBUS_CONTROL_MASK_SND_NKE);
-			if (request.address == MBUS_ADDRESS_NETWORK_LAYER)
+			if (request.address == MBUS_ADDRESS_NETWORK_LAYER) {
 				selected = 0;   /* std. v4.8 ch 7.1 pp 64 */
+				mbus_send_ack(handle);
+			}
 			if (forus)              /* std. v4.8 ch 5.4 pp 25 */
 				mbus_send_ack(handle);
 			break;
 
 		case MBUS_CONTROL_MASK_REQ_UD2: /* req data */
-			dbg("REQ_UD2 (0x%X)", MBUS_CONTROL_MASK_REQ_UD2);
-			if (!selected && !forus)
+			dbg("REQ_UD2 (0x%X) forus:%d", MBUS_CONTROL_MASK_REQ_UD2, forus);
+			if (!forus)
 				break;
 
 			if (mbus_send_frame(handle, &response))
