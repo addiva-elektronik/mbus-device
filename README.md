@@ -98,7 +98,7 @@ Origin & References
 -------------------
 
 Made by Addiva Elektronik AB, Sweden.  Available as Open Source under
-the MIT license.  Please note, libus has a 3-clause BSD license which
+the MIT license.  Please note, libmbus has a 3-clause BSD license which
 contains the advertising clause.
 
 [1]: https://github.com/rscada/libmbus
