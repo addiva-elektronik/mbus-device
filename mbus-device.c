@@ -292,7 +292,8 @@ int main(int argc, char **argv)
 			case MBUS_CONTROL_INFO_DATA_SEND:
 				dbg("SND_UD (0x%X) INFO DATA (0x%X)", MBUS_CONTROL_MASK_SND_UD, MBUS_CONTROL_INFO_DATA_SEND);
 				if (request.data[0] == 0x01 && request.data[1] == 0x7a) {
-					if (!selected)
+					/* Secondary selection or Primary addressing */
+					if (!selected && request.address != address)
 						break;
 
 					log("Setting new primary address %d", request.data[2]);
