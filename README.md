@@ -2,8 +2,8 @@ Basic M-Bus Device
 ==================
 
 This project provides a very basic M-Bus end-device to act as a 'slave'
-role in a wired M-Bus network.  It builds on [libmbus][1] and provides
-enough functionality to:
+role in a wired M-Bus network.  It builds on a fork of [libmbus][1] and
+provides enough functionality to:
 
  - Respond to requests
  - Respond to primary address scanning
@@ -101,4 +101,4 @@ Made by Addiva Elektronik AB, Sweden.  Available as Open Source under
 the MIT license.  Please note, libmbus has a 3-clause BSD license which
 contains the advertising clause.
 
-[1]: https://github.com/rscada/libmbus
+[1]: https://github.com/addiva-elektronik/libmbus
