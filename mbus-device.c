@@ -115,6 +115,7 @@ static int usage(int rc)
 		" -b RATE    Set baudrate: 300, 2400, 9600, default: 2400\n"
 		" -d         Enable debug messages\n"
 		" -f file    Test data to reuse, simulate another product\n"
+		" -p         Disable parity bit => 8N1, default: 8E1\n"
 		"Arguments:\n"
 		" DEVICE     Serial port/pty to use\n"
 		"\n"
@@ -128,6 +129,7 @@ int main(int argc, char **argv)
 	mbus_handle *handle;
 	unsigned char *buf;
 	char *file = NULL;
+	int parity = 1;
 	long rate = 0;
 	size_t len;
 	int result;
@@ -136,7 +138,7 @@ int main(int argc, char **argv)
 
 	arg0 = argv[0];
 
-	while ((c = getopt(argc, argv, "a:b:df:")) != EOF) {
+	while ((c = getopt(argc, argv, "a:b:df:p")) != EOF) {
 		switch (c) {
 		case 'a':
 			address = atoi(optarg);
@@ -149,6 +151,9 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			file = optarg;
+			break;
+		case 'p':
+			parity = 0;
 			break;
 		default:
 			return usage(0);
@@ -179,6 +184,9 @@ int main(int argc, char **argv)
 	if (rate && mbus_serial_set_baudrate(handle, rate) == -1)
 		errx(1, "Failed setting baud rate %ld on serial port %s: %s",
 		     rate, device, mbus_error_str());
+
+	if (!parity)
+		mbus_serial_parity(handle, 0);
 
 	if (file) {
 		unsigned char filebuf[1024], binbuf[1024];
