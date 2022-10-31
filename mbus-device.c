@@ -37,6 +37,19 @@ static int   address;
 static int   debug;
 static char *arg0;
 
+/* Our fake identity, from std. pp 35 */
+unsigned char fixed_response[] = {
+	0x68, 0x13, 0x13, 0x68, /* header of RSP_UD telegram (L-Field = 13h = 19d) */
+	0x08, 0x05, 0x73,	/* C field = 08h (RSP_UD), address 5, CI field = 73h (fixed, LSByte first) */
+	0x78, 0x56, 0x34, 0x12, /* identification number = 12345678 */
+	0x0a,			/* transmission counter = 0Ah = 10d */
+	0x00,			/* status 00h: counters coded BCD, actual values, no errors */
+	0xe9, 0x7e,		/* Type&Unit: medium water, unit1 = 1l, unit2 = 1l (same, but historic) */
+	0x01, 0x00, 0x00, 0x00, /* counter 1 = 1l (actual value) */
+	0x35, 0x01, 0x00, 0x00, /* counter 2 = 135 l (historic value) */
+	0x3c, 0x16		/* checksum and stop sign */
+};
+
 /* Our fake identity, from std. pp 43, variable data structure (mode 1) */
 unsigned char raw_response[] = {
 	0x68, 0x1f, 0x1f, 0x68, /* header of RSP_UD telegram (length 1fh) */
@@ -115,6 +128,7 @@ static int usage(int rc)
 		" -b RATE    Set baudrate: 300, 2400, 9600, default: 2400\n"
 		" -d         Enable debug messages\n"
 		" -f file    Test data to reuse, simulate another product\n"
+		" -F         Use fixed data structure instead of variable\n"
 		" -p         Disable parity bit => 8N1, default: 8E1\n"
 		"Arguments:\n"
 		" DEVICE     Serial port/pty to use\n"
@@ -130,6 +144,7 @@ int main(int argc, char **argv)
 	unsigned char *buf;
 	char *file = NULL;
 	int parity = 1;
+	int fixed = 0;
 	long rate = 0;
 	size_t len;
 	int result;
@@ -138,7 +153,7 @@ int main(int argc, char **argv)
 
 	arg0 = argv[0];
 
-	while ((c = getopt(argc, argv, "a:b:df:p")) != EOF) {
+	while ((c = getopt(argc, argv, "a:b:dFf:p")) != EOF) {
 		switch (c) {
 		case 'a':
 			address = atoi(optarg);
@@ -151,6 +166,9 @@ int main(int argc, char **argv)
 			break;
 		case 'f':
 			file = optarg;
+			break;
+		case 'F':
+			fixed = 1;
 			break;
 		case 'p':
 			parity = 0;
@@ -203,8 +221,14 @@ int main(int argc, char **argv)
 		buf = binbuf;
 		len = mbus_hex2bin(binbuf, sizeof(binbuf), filebuf, sizeof(filebuf));
 	} else {
-		buf = raw_response;
-		len = sizeof(raw_response);
+		if (fixed) {
+			buf = fixed_response;
+			len = sizeof(fixed_response);
+		} else {
+			/* variable response example */
+			buf = raw_response;
+			len = sizeof(raw_response);
+		}
 	}
 
 	result = mbus_parse(&response, buf, len);
