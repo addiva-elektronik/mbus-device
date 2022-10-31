@@ -252,6 +252,7 @@ int main(int argc, char **argv)
 	int selected = 0;
 	while (1) {
 		int fcb = 0, forus = 0;
+		int rc;
 
 		/*
 		 * Workaround.  Currently libmbus is solely focused on
@@ -260,8 +261,14 @@ int main(int argc, char **argv)
 		 * means we cannot use that function or we lose every
 		 * other frame.
 		 */
-		if (handle->recv(handle, &request) != MBUS_RECV_RESULT_OK)
+		rc = handle->recv(handle, &request);
+		if (rc != MBUS_RECV_RESULT_OK) {
+			if (rc == MBUS_RECV_RESULT_ERROR) {
+				warn("Bailing out, %s", mbus_error_str());
+				break;
+			}
 			continue;
+		}
 		time(&request.timestamp);
 
 		if (request.start1 == MBUS_FRAME_ACK_START)
