@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 		     rate, device, mbus_error_str());
 
 	if (!parity)
-		mbus_serial_parity(handle, 0);
+		mbus_serial_set_parity(handle, 0);
 
 	if (file) {
 		unsigned char filebuf[1024], binbuf[1024];
